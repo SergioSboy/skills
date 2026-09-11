@@ -1,0 +1,102 @@
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+- name: Install required system packages
+  apt:
+    pkg:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+      - python3-pip
+      - virtualenv
+      - gnupg
+      - python3-setuptools
+    state: latest
+    update_cache: true
+
+- name: Create keyrings directory
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: 0755
+
+- name: Add Docker GPG key
+  get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: 0644
+
+- name: Add Docker repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+    update_cache: true
+
+- name: Install Docker
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+    update_cache: true
+
+- name: Install Docker Module for Python
+  apt:
+    name: python3-docker
+    state: present
+
+- name: Install docker compose
+  apt:
+    name: docker-compose-plugin
+    state: present
+    cache_valid_time: 86400
+
+- name: Add user to docker group
+  user:
+    name: deployer
+    groups: docker
+    append: yes
+
+- name: Create project directory
+  file:
+    path: /opt/monitoring
+    state: directory
+    mode: 0755
+
+- name: Create prometheus directory
+  file:
+    path: /opt/monitoring/prometheus
+    state: directory
+    mode: 0755
+
+- name: Copy docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: /opt/monitoring/docker-compose.yml
+    mode: 0644
+
+- name: Configure Nginx
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /opt/monitoring/nginx.conf
+    mode: 0644
+
+- name: Copy prometheus config
+  ansible.builtin.template:
+    src: prometheus.yml.j2
+    dest: /opt/monitoring/prometheus/prometheus.yml
+    mode: 0644
+
+- name: Pull, down, and up docker-compose
+  shell: |
+    docker compose pull
+    docker compose down --remove-orphans
+    docker compose up -d
+  args:
+    chdir: /opt/monitoring/
+  become: true

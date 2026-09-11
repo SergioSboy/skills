@@ -1,0 +1,7 @@
+- name: Configure Nginx
+  hosts: lba
+  become: true
+
+  roles:
+    - nginx
+    - health

@@ -1,0 +1,21 @@
+{{ app_dir | default('/opt/lab') }}/logs/*.log {
+    daily
+    rotate 14
+
+    size 100M
+
+    compress
+    delaycompress
+
+    missingok
+    notifempty
+
+    copytruncate
+
+    dateext
+    dateformat -%Y%m%d
+
+    maxage 30
+
+    su deployer deployer
+}

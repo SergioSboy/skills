@@ -1,0 +1,10 @@
+- name: Configure SSL
+  hosts: lba
+  become: true
+  become_exe: sudo.ws
+
+  roles:
+    - openssl
+    - role: nginx
+      vars:
+        is_tls: true

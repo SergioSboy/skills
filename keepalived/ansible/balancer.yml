@@ -1,0 +1,9 @@
+- name: Configure LoadBalancer
+  hosts: lba
+  become: true
+  become_exe: sudo.ws
+
+  roles:
+    - nginx
+    - keepalived
+    - health

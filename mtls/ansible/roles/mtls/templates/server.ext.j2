@@ -1,0 +1,13 @@
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
+
+[alt_names]
+{% for dns in cert_san_dns %}
+DNS.{{ loop.index }} = {{ dns }}
+{% endfor %}
+{% for ip in cert_san_ip %}
+IP.{{ loop.index }} = {{ ip }}
+{% endfor %}

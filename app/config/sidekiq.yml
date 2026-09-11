@@ -1,0 +1,20 @@
+development:
+  :concurrency: 1
+test:
+  :concurrency: 1
+production:
+  :concurrency: <%= ENV['SIDEKIQ_CONCURRENCY'] || 4 %>
+:queues:
+  - [default, 1]
+:max_retries: 1
+
+:scheduler:
+  :schedule:
+    MetricsJob:
+      cron: "0 */5 * * * *"
+      description: "Completed licenses"
+      queue: default
+    UpdateActiveUsersJob:
+      cron: "0 */10 * * * *"
+      description: "Update active users"
+      queue: default

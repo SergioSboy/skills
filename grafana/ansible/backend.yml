@@ -1,0 +1,7 @@
+- name: Configure App
+  hosts: backend
+  become: true
+  become_exe: sudo.ws
+
+  roles:
+    - backend

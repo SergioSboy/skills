@@ -1,0 +1,29 @@
+- name: Copy load generator
+  ansible.builtin.copy:
+    src: load_test.py
+    dest: /tmp/load_test.py
+    mode: "0755"
+
+- name: Run load test
+  ansible.builtin.command:
+      cmd: python3 /tmp/load_test.py
+  environment:
+    BASE_URL: "{{ load_test_base_url }}"
+    DURATION: "{{ load_test_duration }}"
+    BASE_RPS: "{{ load_test_base_rps }}"
+    BURST_RPS: "{{ load_test_burst_rps }}"
+    BURST_DURATION: "{{ load_test_burst_duration }}"
+    BURST_INTERVAL: "{{ load_test_burst_interval }}"
+    TIMEOUT: "{{ load_test_timeout }}"
+
+    URLS: >-
+      {{
+        load_test_urls
+        | map(attribute='path')
+        | zip(load_test_urls | map(attribute='weight'))
+        | map('join', '|')
+        | join(',')
+      }}
+
+  async: "{{ load_test_duration + 60 }}"
+  poll: 1

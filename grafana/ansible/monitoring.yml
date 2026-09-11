@@ -1,0 +1,7 @@
+- name: Configure Monitoring
+  hosts: mon
+  become: true
+  become_exe: sudo.ws
+
+  roles:
+    - load

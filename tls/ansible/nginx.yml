@@ -1,0 +1,8 @@
+- name: Configure Nginx
+  hosts: lba
+  become: true
+  become_exe: sudo.ws
+
+  roles:
+    - nginx
+    - health

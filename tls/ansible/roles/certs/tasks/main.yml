@@ -1,0 +1,25 @@
+- name: Update all packages
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: dist
+
+- name: Install certbot
+  apt:
+    name:
+      - certbot
+      - python3-certbot-nginx
+    state: present
+    update_cache: yes
+
+- name: Obtain Let's Encrypt certificate
+  ansible.builtin.command:
+    cmd: >
+      certbot certonly
+      --webroot
+      --webroot-path /var/www/certbot
+      --domain {{ domain }}
+      --email {{ certbot_email }}
+      --agree-tos
+      --non-interactive
+  args:
+    creates: "/etc/letsencrypt/live/{{ domain }}/fullchain.pem"

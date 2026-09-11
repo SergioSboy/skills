@@ -1,0 +1,17 @@
+all:
+  children:
+    lba:
+      hosts:
+        lba01:
+          ansible_host: 192.168.64.2
+
+        lba02:
+          ansible_host: 192.168.64.4
+      vars:
+        mtls_port: 8443
+        keepalived_vip: 192.168.64.100
+        cert_san_dns:
+          - example.com
+          - lb.local
+        cert_san_ip:
+          - 192.168.64.100

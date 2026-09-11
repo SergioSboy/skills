@@ -1,0 +1,69 @@
+- name: Install OpenSSL
+  ansible.builtin.apt:
+    name: openssl
+    state: present
+    update_cache: true
+
+- name: Create SSL directory
+  ansible.builtin.file:
+    path: /etc/nginx/ssl
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Generate server private key
+  ansible.builtin.command:
+    cmd: openssl genrsa -out /etc/nginx/ssl/server.key 2048
+    creates: /etc/nginx/ssl/server.key
+
+- name: Generate CSR
+  ansible.builtin.command:
+    cmd: >
+      openssl req -new
+      -key /etc/nginx/ssl/server.key
+      -out /etc/nginx/ssl/server.csr
+      -subj "/CN={{ ansible_fqdn }}"
+    creates: /etc/nginx/ssl/server.csr
+
+- name: Copy CA certificate
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/certificates/ca.crt"
+    dest: /etc/nginx/ssl/ca.crt
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Copy CA private key
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/certificates/ca.key"
+    dest: /etc/nginx/ssl/ca.key
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: Sign CSR
+  ansible.builtin.command:
+    cmd: >
+      openssl x509 -req
+      -in /etc/nginx/ssl/server.csr
+      -CA /etc/nginx/ssl/ca.crt
+      -CAkey /etc/nginx/ssl/ca.key
+      -CAcreateserial
+      -out /etc/nginx/ssl/server.crt
+      -days 365
+      -sha256
+
+- name: Set private key permissions
+  ansible.builtin.file:
+    path: /etc/nginx/ssl/server.key
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: Set certificate permissions
+  ansible.builtin.file:
+    path: /etc/nginx/ssl/server.crt
+    owner: root
+    group: root
+    mode: "0644"

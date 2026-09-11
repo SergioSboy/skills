@@ -1,0 +1,43 @@
+all:
+  children:
+    backend:
+      hosts:
+        backend01:
+          ansible_host: 192.168.64.6
+
+      vars:
+        database_user: postgres
+        database_password: postgres
+        database_name: service
+        database_host: app_db
+        secret_key: secret_key
+        redis_url: redis://redis:6379/0
+        rails_env: production
+
+    mon:
+      hosts:
+        mon01:
+          ansible_host: 192.168.64.8
+      vars:
+        backend_ip: 192.168.64.6
+        load_test_base_url: "http://192.168.64.6"
+
+        load_test_duration: 600
+
+        load_test_base_rps: 5
+        load_test_burst_rps: 10
+
+        load_test_burst_duration: 10
+        load_test_burst_interval: 60
+
+        load_test_timeout: 5
+
+        load_test_urls:
+          - path: /api/health
+            weight: 1
+
+          - path: /api/users
+            weight: 3
+
+          - path: /api/products
+            weight: 2

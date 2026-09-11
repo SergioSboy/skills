@@ -1,0 +1,10 @@
+- name: Configure Nginx
+  hosts: lba
+  become: true
+  become_exe: sudo.ws
+
+  roles:
+    - mtls
+    - role: nginx
+      vars:
+        is_mtls: true

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -u
+
+LOG_FILE="/var/log/keepalived-state.log"
+HOSTNAME="$(hostname)"
+DATE="$(date '+%Y-%m-%d %H:%M:%S')"
+
+NEW_STATE="${3:-UNKNOWN}"
+
+case "$NEW_STATE" in
+    MASTER|BACKUP|FAULT)
+        ;;
+    *)
+        echo "$DATE host=$HOSTNAME invalid_state=$NEW_STATE" >> "$LOG_FILE"
+        exit 1
+        ;;
+esac
+
+echo "$DATE host=$HOSTNAME state=$NEW_STATE" >> "$LOG_FILE"
+
+exit 0

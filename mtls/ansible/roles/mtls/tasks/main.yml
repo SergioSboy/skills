@@ -1,0 +1,45 @@
+- name: Создание структуры каталогов для mTLS
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "/etc/ssl/mtls/private"
+    - "/etc/ssl/mtls/csr"
+    - "/etc/ssl/mtls/certs"
+    - "/etc/ssl/mtls/configs"
+
+- name: Генерация закрытого ключа Сервера
+  command: >
+    openssl genrsa -out /etc/ssl/mtls/private/server.key 4096
+  args:
+    creates: "/etc/ssl/mtls/private/server.key"
+
+- name: Генерация CSR Сервера
+  command: >
+    openssl req -new
+    -key /etc/ssl/mtls/private/server.key
+    -out /etc/ssl/mtls/csr/server.csr
+    -subj "/CN=example.com"
+  args:
+    creates: "/etc/ssl/mtls/csr/server.csr"
+
+- name: Генерация файла server.ext из шаблона
+  template:
+    src: templates/server.ext.j2
+    dest: "/etc/ssl/mtls/configs/server.ext"
+    mode: '0644'
+
+- name: Подпись CSR Сервера через ваш CA
+  command: >
+    openssl x509 -req
+    -in /etc/ssl/mtls/csr/server.csr
+    -CA {{ playbook_dir }}/certificates/ca.key
+    -CAkey {{ playbook_dir }}/certificates/ca.key
+    -CAcreateserial
+    -out /etc/ssl/mtls/certs/server.crt
+    -days 825
+    -sha256
+    -extfile /etc/ssl/mtls/configs/server.ext
+  args:
+    creates: "/etc/ssl/mtls/certs/server.crt"

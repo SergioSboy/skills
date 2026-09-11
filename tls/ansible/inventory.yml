@@ -1,0 +1,11 @@
+all:
+  children:
+    lba:
+      hosts:
+        lba01:
+          ansible_host: 192.168.64.2
+
+        lba02:
+          ansible_host: 192.168.64.4
+      vars:
+        is_tls: false

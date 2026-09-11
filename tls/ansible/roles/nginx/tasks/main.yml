@@ -1,0 +1,24 @@
+- name: Update all packages
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: dist
+
+- name: Install Nginx
+  ansible.builtin.package:
+    name: nginx
+    state: present
+
+- name: Ensure Nginx is running
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: true
+
+- name: Configure ACME
+  ansible.builtin.include_tasks:
+    file: acme.yml
+
+- name: Configure HTTPS
+  ansible.builtin.include_tasks:
+    file: https.yml
+  when: is_tls | bool

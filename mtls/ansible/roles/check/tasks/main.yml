@@ -1,0 +1,31 @@
+- name: "TEST 1"
+  ansible.builtin.uri:
+    url: "https://{{ keepalived_vip }}:{{ mtls_port }}/"
+    method: GET
+    ca_path: {{ playbook_dir }}/certificates/ca.crt
+    client_cert: {{ playbook_dir }}/certificates/client.crt
+    client_key: {{ playbook_dir }}/certificates/client.key
+    validate_certs: true
+    status_code: [200, 301, 302, 404]
+  register: mtls_success
+  ignore_errors: false
+
+- name: Вывод статуса успешного подключения
+  ansible.builtin.debug:
+    msg: "mTLS работает успешно! Код ответа сервера: {{ mtls_success.status }}"
+
+- name: "TEST 2"
+  ansible.builtin.uri:
+    url: "https://{{ keepalived_vip }}:{{ mtls_port }}/"
+    method: GET
+    ca_path: {{ playbook_dir }}/certificates/ca.crt
+    validate_certs: true
+  register: mtls_fail
+  ignore_errors: true
+
+- name: Проверка, что сервер отклонил запрос без сертификата
+  ansible.builtin.assert:
+    that:
+      - mtls_fail.failed == true
+    success_msg: "Тест пройден: Сервер успешно заблокировал запрос без клиентского сертификата."
+    fail_msg: "ОШИБКА: Сервер ответил на запрос без клиентского сертификата! mTLS не настроен жестко."

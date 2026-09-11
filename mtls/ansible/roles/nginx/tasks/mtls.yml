@@ -1,0 +1,10 @@
+- name: Configure MTLS
+  ansible.builtin.template:
+    src: mtls.conf.j2
+    dest: /etc/nginx/conf.d/mtls.conf
+    mode: '0644'
+  notify: Reload Nginx
+
+- name: Validate Nginx configuration
+  ansible.builtin.command: nginx -t
+  changed_when: false

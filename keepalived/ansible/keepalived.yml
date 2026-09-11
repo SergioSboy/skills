@@ -1,0 +1,7 @@
+- name: Configure Keepalived
+  hosts: lba
+  become: true
+
+  roles:
+    - keepalived
+    - health

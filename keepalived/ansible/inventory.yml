@@ -1,0 +1,18 @@
+all:
+  children:
+    lba:
+      hosts:
+        lba01:
+          ansible_host: 192.168.64.2
+          keepalived_state: MASTER
+          keepalived_priority: 110
+
+        lba02:
+          ansible_host: 192.168.64.4
+          keepalived_state: BACKUP
+          keepalived_priority: 100
+
+      vars:
+        keepalived_interface: enp0s1
+        keepalived_vip: 192.168.64.100
+        keepalived_password: secret

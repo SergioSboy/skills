@@ -1,0 +1,12 @@
+- name: Configure Certificates
+  hosts: lba
+  become: true
+  become_exe: sudo.ws
+
+  roles:
+    - nginx
+    - certs
+    - role: nginx
+      vars:
+        is_tls: true
+    - health

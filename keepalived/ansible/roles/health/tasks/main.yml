@@ -1,0 +1,12 @@
+---
+- name: Check VIP health endpoint
+  ansible.builtin.uri:
+    url: "http://{{ keepalived_vip }}"
+    status_code: 200
+    return_content: true
+  register: health_check
+  retries: 5
+  delay: 2
+  until:
+    - health_check.status == 200
+    - health_check.content | trim == "OK"

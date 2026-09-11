@@ -1,0 +1,17 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'rails'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['{{ backend_ip }}:9394']
+        labels:
+          env: lba
+
+  - job_name: 'node'
+    static_configs:
+      - targets: ['{{ backend_ip }}:9100']
+        labels:
+          env: lab

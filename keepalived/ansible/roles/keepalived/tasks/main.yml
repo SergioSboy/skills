@@ -1,0 +1,31 @@
+- name: Update all packages
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: dist
+
+- name: Install Keepalived
+  ansible.builtin.package:
+    name: keepalived
+    state: present
+
+- name: Install Keepalived notify script
+  ansible.builtin.template:
+    src: keepalived-notify.sh.j2
+    dest: /usr/local/bin/keepalived-notify.sh
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Configure Keepalived
+  ansible.builtin.template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    mode: "0600"
+  notify: Restart Keepalived
+
+
+- name: Ensure Keepalived is running
+  ansible.builtin.service:
+    name: keepalived
+    state: started
+    enabled: true
