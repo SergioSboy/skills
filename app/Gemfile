@@ -3,11 +3,15 @@ source "https://rubygems.org"
 gem "rails"
 gem "pg"
 gem "puma"
-gem 'redis'
-gem 'sidekiq'
-gem 'sidekiq-scheduler'
-gem 'prometheus_exporter'
+gem "redis"
+gem "sidekiq"
+gem "sidekiq-scheduler"
+gem "prometheus_exporter"
 
+gem "jbuilder"
+gem "jwt"
+gem "pundit"
+gem "rack-attack"
 
 gem "bootsnap", require: false
 

@@ -1,4 +1,4 @@
-require 'prometheus_exporter/client'
+require "prometheus_exporter/client"
 
 module PrometheusExporter
   class StubClient

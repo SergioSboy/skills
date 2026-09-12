@@ -3,7 +3,7 @@ require_relative "boot"
 require "rails/all"
 Bundler.require(*Rails.groups)
 
-Dir['./middlewares/*.rb'].each { |file| require file }
+Dir["./middlewares/*.rb"].each { |file| require file }
 
 module Service
   class Application < Rails::Application
@@ -20,5 +20,6 @@ module Service
     end
 
     config.middleware.use PrometheusMiddleware
+    config.middleware.use Rack::Attack
   end
 end

@@ -1,4 +1,5 @@
-class UpdateActiveUsersJob < ApplicationJob
+class UpdateActiveUsersJob
+  include Sidekiq::Job
   queue_as :default
 
   @@active_users = 10

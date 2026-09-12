@@ -23,6 +23,6 @@ class PrometheusMiddleware
 
     request_metric.observe(duration, tags)
 
-    [status, header, response]
+    [ status, header, response ]
   end
 end
