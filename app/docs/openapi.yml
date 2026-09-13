@@ -1,0 +1,972 @@
+openapi: 3.0.3
+
+info:
+  title: Rails API
+  description: Versioned Rails API
+  version: 1.0.0
+
+servers:
+  - url: /api
+
+tags:
+  - name: V1 - Users
+  - name: V1 - Articles
+  - name: V1 - Topics
+  - name: V2 - Articles
+
+paths:
+
+  # ============================================================
+  # V1 USERS
+  # ============================================================
+
+  /v1/users/login:
+    post:
+      tags:
+        - V1 - Users
+      summary: Login
+      operationId: v1Login
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/users/registrations:
+    post:
+      tags:
+        - V1 - Users
+      summary: Register user
+      operationId: v1Register
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationRequest'
+
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+
+  # ============================================================
+  # V1 ARTICLES
+  # ============================================================
+
+  /v1/articles:
+    get:
+      tags:
+        - V1 - Articles
+      summary: List articles
+      operationId: v1ListArticles
+
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+
+        - name: from_date
+          in: query
+          required: false
+          description: Filter articles created from this date
+          schema:
+            type: string
+            format: date
+
+        - name: to_date
+          in: query
+          required: false
+          description: Filter articles created until this date
+          schema:
+            type: string
+            format: date
+
+      responses:
+        '200':
+          description: Articles list
+          headers:
+            Deprecation:
+              $ref: '#/components/headers/Deprecation'
+            Sunset:
+              $ref: '#/components/headers/Sunset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleListResponse'
+
+    post:
+      tags:
+        - V1 - Articles
+      summary: Create article
+      operationId: v1CreateArticle
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleRequest'
+
+      responses:
+        '201':
+          description: Article created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleResponse'
+
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+
+  /v1/articles/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ArticleId'
+
+    get:
+      tags:
+        - V1 - Articles
+      summary: Get article
+      operationId: v1GetArticle
+
+      responses:
+        '200':
+          description: Article
+          headers:
+            Deprecation:
+              $ref: '#/components/headers/Deprecation'
+            Sunset:
+              $ref: '#/components/headers/Sunset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleResponse'
+
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags:
+        - V1 - Articles
+      summary: Update article
+      operationId: v1UpdateArticle
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleRequest'
+
+      responses:
+        '200':
+          description: Article updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleResponse'
+
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    put:
+      tags:
+        - V1 - Articles
+      summary: Replace article
+      operationId: v1ReplaceArticle
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleRequest'
+
+      responses:
+        '200':
+          description: Article updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleResponse'
+
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    delete:
+      tags:
+        - V1 - Articles
+      summary: Delete article
+      operationId: v1DeleteArticle
+
+      responses:
+        '204':
+          description: Article deleted
+
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+
+  # ============================================================
+  # V1 ARTICLE TOPICS
+  # ============================================================
+
+  /v1/articles/{article_id}/topics:
+    get:
+      tags:
+        - V1 - Topics
+      summary: List topics for article
+      operationId: v1ListArticleTopics
+
+      parameters:
+        - $ref: '#/components/parameters/ArticleId'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+
+      responses:
+        '200':
+          description: Topics list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicListResponse'
+
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+
+  # ============================================================
+  # V1 TOPICS
+  # ============================================================
+
+  /v1/topics:
+    get:
+      tags:
+        - V1 - Topics
+      summary: List topics
+      operationId: v1ListTopics
+
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+
+      responses:
+        '200':
+          description: Topics list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicListResponse'
+
+
+  /v1/topics/{id}:
+    parameters:
+      - $ref: '#/components/parameters/TopicId'
+
+    get:
+      tags:
+        - V1 - Topics
+      summary: Get topic
+      operationId: v1GetTopic
+
+      responses:
+        '200':
+          description: Topic
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicResponse'
+
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+
+  # ============================================================
+  # V2 ARTICLES
+  # ============================================================
+
+  /v2/articles:
+    get:
+      tags:
+        - V2 - Articles
+      summary: List articles
+      operationId: v2ListArticles
+
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+
+      responses:
+        '200':
+          description: Articles list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V2ArticleListResponse'
+
+    post:
+      tags:
+        - V2 - Articles
+      summary: Create article
+      operationId: v2CreateArticle
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V2ArticleRequest'
+
+      responses:
+        '201':
+          description: Article created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V2ArticleResponse'
+
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+
+  /v2/articles/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ArticleId'
+
+    get:
+      tags:
+        - V2 - Articles
+      summary: Get article
+      operationId: v2GetArticle
+
+      responses:
+        '200':
+          description: Article
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V2ArticleResponse'
+
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags:
+        - V2 - Articles
+      summary: Update article
+      operationId: v2UpdateArticle
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V2ArticleRequest'
+
+      responses:
+        '200':
+          description: Article updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V2ArticleResponse'
+
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    put:
+      tags:
+        - V2 - Articles
+      summary: Replace article
+      operationId: v2ReplaceArticle
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V2ArticleRequest'
+
+      responses:
+        '200':
+          description: Article updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V2ArticleResponse'
+
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    delete:
+      tags:
+        - V2 - Articles
+      summary: Delete article
+      operationId: v2DeleteArticle
+
+      responses:
+        '204':
+          description: Article deleted
+
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+
+components:
+
+  # ============================================================
+  # PARAMETERS
+  # ============================================================
+
+  parameters:
+
+    Page:
+      name: page
+      in: query
+      required: false
+      description: Page number
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+
+    PerPage:
+      name: per_page
+      in: query
+      required: false
+      description: Number of records per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+    ArticleId:
+      name: id
+      in: path
+      required: true
+      description: Article ID
+      schema:
+        type: integer
+        example: 1
+
+    TopicId:
+      name: id
+      in: path
+      required: true
+      description: Topic ID
+      schema:
+        type: integer
+        example: 1
+
+
+  # ============================================================
+  # HEADERS
+  # ============================================================
+
+  headers:
+
+    Deprecation:
+      description: Indicates that the API version is deprecated
+      schema:
+        type: string
+        example: "true"
+
+    Sunset:
+      description: Date when the API version will be removed
+      schema:
+        type: string
+        example: "Wed, 31 Dec 2026 23:59:59 GMT"
+
+
+  # ============================================================
+  # RESPONSES
+  # ============================================================
+
+  responses:
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+
+  # ============================================================
+  # SCHEMAS
+  # ============================================================
+
+  schemas:
+
+    # ----------------------------------------------------------
+    # Pagination
+    # ----------------------------------------------------------
+
+    Pagination:
+      type: object
+      properties:
+        total_count:
+          type: integer
+          example: 50
+
+        total_pages:
+          type: integer
+          example: 3
+
+        current_page:
+          type: integer
+          example: 1
+
+        per_page:
+          type: integer
+          example: 20
+
+      required:
+        - total_count
+        - total_pages
+        - current_page
+        - per_page
+
+
+    # ----------------------------------------------------------
+    # Errors
+    # ----------------------------------------------------------
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: not_found
+
+        message:
+          type: string
+          example: Article not found
+
+        field:
+          type: string
+          nullable: true
+          example: title
+
+      required:
+        - code
+        - message
+
+
+    ErrorResponse:
+      type: object
+      properties:
+        data:
+          nullable: true
+          example: null
+
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+
+      required:
+        - data
+        - errors
+
+
+    # ----------------------------------------------------------
+    # V1 Article
+    # ----------------------------------------------------------
+
+    Article:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+
+        type:
+          type: string
+          example: article
+
+        attributes:
+          type: object
+          properties:
+            title:
+              type: string
+              example: Getting started with Rails
+
+            body:
+              type: string
+              example: Rails is a web framework...
+
+            topic_id:
+              type: integer
+              example: 2
+
+            created_at:
+              type: string
+              format: date-time
+
+            updated_at:
+              type: string
+              format: date-time
+
+          required:
+            - title
+            - body
+            - topic_id
+
+      required:
+        - id
+        - type
+        - attributes
+
+
+    ArticleRequest:
+      type: object
+      required:
+        - article
+      properties:
+        article:
+          type: object
+          required:
+            - title
+            - body
+          properties:
+            title:
+              type: string
+              example: Getting started with Rails
+
+            body:
+              type: string
+              example: Rails is a web framework...
+
+            topic_id:
+              type: integer
+              example: 2
+
+
+    ArticleResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Article'
+
+
+    ArticleListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Article'
+
+        meta:
+          $ref: '#/components/schemas/Pagination'
+
+
+    # ----------------------------------------------------------
+    # Topic
+    # ----------------------------------------------------------
+
+    Topic:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+
+        type:
+          type: string
+          example: topic
+
+        attributes:
+          type: object
+          properties:
+            name:
+              type: string
+              example: Ruby
+
+          required:
+            - name
+
+      required:
+        - id
+        - type
+        - attributes
+
+
+    TopicResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Topic'
+
+
+    TopicListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Topic'
+
+        meta:
+          $ref: '#/components/schemas/Pagination'
+
+
+    # ----------------------------------------------------------
+    # V2 Article
+    # ----------------------------------------------------------
+
+    V2Topic:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 2
+
+        name:
+          type: string
+          example: Rails
+
+      required:
+        - id
+        - name
+
+
+    V2Author:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+
+        name:
+          type: string
+          example: John
+
+      required:
+        - id
+        - name
+
+
+    V2Article:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+
+        type:
+          type: string
+          example: article
+
+        attributes:
+          type: object
+          properties:
+            title:
+              type: string
+              example: Getting started with Rails
+
+            body:
+              type: string
+              example: Rails is a web framework...
+
+            published:
+              type: boolean
+              example: true
+
+            created_at:
+              type: string
+              format: date-time
+
+            updated_at:
+              type: string
+              format: date-time
+
+            topic:
+              $ref: '#/components/schemas/V2Topic'
+
+            author:
+              $ref: '#/components/schemas/V2Author'
+
+          required:
+            - title
+            - body
+            - published
+            - topic
+            - author
+
+      required:
+        - id
+        - type
+        - attributes
+
+
+    V2ArticleRequest:
+      type: object
+      required:
+        - article
+      properties:
+        article:
+          type: object
+          required:
+            - title
+            - body
+          properties:
+            title:
+              type: string
+              example: New article
+
+            body:
+              type: string
+              example: Article body...
+
+            topic_id:
+              type: integer
+              example: 2
+
+            author_id:
+              type: integer
+              example: 1
+
+            published:
+              type: boolean
+              example: true
+
+
+    V2ArticleResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/V2Article'
+
+
+    V2ArticleListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/V2Article'
+
+        meta:
+          $ref: '#/components/schemas/Pagination'
+
+
+    # ----------------------------------------------------------
+    # Users
+    # ----------------------------------------------------------
+
+    LoginRequest:
+      type: object
+      required:
+        - user
+      properties:
+        user:
+          type: object
+          required:
+            - email
+            - password
+          properties:
+            email:
+              type: string
+              format: email
+              example: john@example.com
+
+            password:
+              type: string
+              format: password
+              example: password
+
+
+    RegistrationRequest:
+      type: object
+      required:
+        - user
+      properties:
+        user:
+          type: object
+          required:
+            - name
+            - email
+            - password
+          properties:
+            name:
+              type: string
+              example: John
+
+            email:
+              type: string
+              format: email
+              example: john@example.com
+
+            password:
+              type: string
+              format: password
+              example: password
+
+
+    # ----------------------------------------------------------
+    # Generic
+    # ----------------------------------------------------------
+
+    SuccessResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          nullable: true
+
+        meta:
+          type: object
+          nullable: true
+
+      required:
+        - data
