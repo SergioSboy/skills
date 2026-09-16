@@ -1,7 +1,5 @@
 class ApplicationController < ActionController::API
-    before_action :authenticate_request
-    before_action :validate_page
-
+    before_action :page_validation
 
     rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
     rescue_from Pundit::NotAuthorizedError, with: :render_forbidden
@@ -35,28 +33,6 @@ class ApplicationController < ActionController::API
       }
     }, status: :forbidden
     end
-
-
-    def authenticate_request
-        token = request.headers["Authorization"]&.split(" ")&.last
-
-        unless token
-          return render_unauthorized("Authorization token is missing")
-        end
-
-        begin
-          payload = JWT.decode(
-            token,
-            Rails.application.credentials.jwt_secret,
-            true,
-            algorithm: "HS256"
-          ).first
-
-          @current_user = User.find(payload["user_id"])
-        rescue JWT::DecodeError
-          render_unauthorized("Invalid token")
-        end
-      end
 
     def render_unauthorized(message)
         render json: {

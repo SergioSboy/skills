@@ -2,7 +2,6 @@ module Api
     module V1
       module Users
         class LoginController < V1Controller
-          skip_before_action :authenticate_request
 
           def create
             email = params[:email]

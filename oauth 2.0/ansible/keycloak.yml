@@ -1,0 +1,7 @@
+- name: Configure keycloak
+  hosts: keycloak
+  become: true
+  become_exe: sudo.ws
+
+  roles:
+    - keycloak

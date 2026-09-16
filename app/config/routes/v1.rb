@@ -4,6 +4,8 @@ namespace :v1 do
     post "registrations", to: "registrations#create"
   end
 
+  get "me", to: "me#show"
+
   resources :articles do
     resources :topics, only: [ :index ]
   end

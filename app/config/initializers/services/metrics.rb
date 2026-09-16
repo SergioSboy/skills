@@ -22,7 +22,7 @@ end
 
 class Services
   def metrics
-    if Rails.env.test?
+    if Rails.env.test? || Rails.env.development?
       PrometheusExporter::StubClient.default
     else
       PrometheusExporter::Client.default

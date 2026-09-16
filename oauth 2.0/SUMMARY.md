@@ -631,3 +631,52 @@ Revocation — принудительно сделать токен недейс
 - выдачи высоких привилегий.
 
 В OIDC можно потребовать более свежую/сильную аутентификацию, например через prompt=login или механизмы max_age и acr.
+
+## Authorization Server
+
+### keycloak
+
+описал плейбук для разворачивания keycloak
+
+- добавил клиента app
+- добавил user/admin (обязательно заполнить все поля!)
+- добавил роли
+
+
+### выдача token
+
+```
+curl -X POST "http://192.168.64.10/realms/app/protocol/openid-connect/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=password" \
+  -d "client_id=rails-api" \
+  -d "username=admin" \
+  -d "password=1234"
+```
+
+### проверка запроса для приложения
+
+получаем токен
+```
+TOKEN=$(curl -s -X POST \             
+  "http://192.168.64.10/realms/app/protocol/openid-connect/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=password" \
+  -d "client_id=rails-api" \
+  -d "username=admin" \
+  -d "password=1234" \
+```
+
+
+делаем запрос в приложение
+
+```
+curl http://localhost:3000/api/v1/me \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+
+
+## Список литературы
+
+https://habr.com/ru/companies/slurm/articles/654475/ - Keycloak

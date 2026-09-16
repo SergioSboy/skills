@@ -1,6 +1,6 @@
 module Api
   module V1
-    class V1Controller < ApplicationController
+    class V1Controller < AuthenticateController
       before_action :set_deprecation_headers
 
       rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
