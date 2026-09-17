@@ -14,8 +14,29 @@ module Api
         )
       end
 
+      def logout
+        id_token = session[:oidc_id_token]
+        reset_session
+
+        redirect_to(
+          Auth::Oidc::Logout.url(id_token_hint: id_token),
+          allow_other_host: true
+        )
+      end
+
+        def logout_callback
+          render json: {
+            data: {
+              message: "logout successful"
+            }
+          }, status: :ok
+        end
+
       def callback
-        return head :ok if params[:error]
+        if params[:error]
+            Rails.logger.warn("OIDC authorization failed: #{params[:error]}")
+          return head :bad_request
+        end
         return head :bad_request unless params[:code]
 
         unless Auth::Oidc::Authorization.secure_compare(
@@ -35,9 +56,13 @@ module Api
           code_verifier: code_verifier
         )
 
+        session[:oidc_id_token] = id_token
+
+        id_token = tokens.fetch("id_token")
+        user = Auth::Oidc::IdTokenVerifier.call(id_token: id_token, expected_nonce: nonce)
+
         session[:user] = {
-          access_token: tokens.fetch("access_token"),
-          refresh_token: tokens["refresh_token"]
+          id: user.fetch("sub"), username: user["preferred_username"], email: user["email"]
         }
 
         render json: {

@@ -6,6 +6,8 @@ namespace :v1 do
 
   get "me", to: "me#show"
   get "/login", to: "oidc#login"
+  get "/logout", to: "oidc#logout"
+  get "/logout/callback", to: "oidc#logout_callback"
   get "/auth/keycloak/callback", to: "oidc#callback"
 
   resources :articles do

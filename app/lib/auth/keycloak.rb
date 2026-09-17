@@ -23,5 +23,6 @@ module Auth
 
     REDIRECT_URI =
       "http://localhost:3000/api/v1/auth/keycloak/callback"
+    POST_LOGOUT_REDIRECT_URI="http://localhost:3000/api/v1/logout/callback"
   end
 end
