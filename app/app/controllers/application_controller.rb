@@ -1,5 +1,4 @@
 class ApplicationController < ActionController::API
-    before_action :page_validation
 
     rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
     rescue_from Pundit::NotAuthorizedError, with: :render_forbidden
@@ -48,25 +47,6 @@ class ApplicationController < ActionController::API
             request_id: request.request_id
           }
         }, status: :unauthorized
-    end
-
-    def page_validation
-        return unless params[:page].present?
-
-        page = Integer(params[:page], exception: false)
-
-        if page.nil? || page < 1
-          render json: {
-            data: nil,
-            errors: [
-              {
-                code: "invalid_parameter",
-                field: "page",
-                message: "page must be a positive integer"
-              }
-            ]
-          }, status: :bad_request
-        end
     end
 
     def render_not_found

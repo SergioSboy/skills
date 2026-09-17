@@ -94,6 +94,10 @@ GEM
       irb (~> 1.10)
       reline (>= 0.3.8)
     diff-lcs (1.6.2)
+    dotenv (3.2.0)
+    dotenv-rails (3.2.0)
+      dotenv (= 3.2.0)
+      railties (>= 6.1)
     drb (2.2.3)
     erb (6.0.7)
     erubi (1.13.1)
@@ -115,7 +119,7 @@ GEM
     jbuilder (2.15.1)
       actionview (>= 7.0.0)
       activesupport (>= 7.0.0)
-    json (3.0.2)
+    json (2.21.2)
     jwt (3.3.0)
       base64
     language_server-protocol (3.17.0.6)
@@ -335,7 +339,9 @@ DEPENDENCIES
   brakeman
   bundler-audit
   debug
+  dotenv-rails
   jbuilder
+  json (< 3)
   jwt
   pg
   prometheus_exporter

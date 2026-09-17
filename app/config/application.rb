@@ -11,9 +11,11 @@ module Service
     config.autoload_lib(ignore: %w[assets tasks])
 
     config.middleware.use ActionDispatch::Cookies
+    config.middleware.use ActionDispatch::Session::CookieStore
 
     config.api_only = true
     config.active_job.queue_adapter = :sidekiq
+    config.action_dispatch.show_exceptions = :none
 
     config.generators do |g|
       g.orm :active_record, primary_key_type: :uuid

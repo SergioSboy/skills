@@ -5,6 +5,8 @@ namespace :v1 do
   end
 
   get "me", to: "me#show"
+  get "/login", to: "oidc#login"
+  get "/auth/keycloak/callback", to: "oidc#callback"
 
   resources :articles do
     resources :topics, only: [ :index ]
