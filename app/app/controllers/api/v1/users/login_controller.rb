@@ -2,7 +2,6 @@ module Api
     module V1
       module Users
         class LoginController < V1Controller
-
           def create
             email = params[:email]
             password = params[:password]

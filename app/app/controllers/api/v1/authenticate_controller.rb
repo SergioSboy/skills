@@ -17,5 +17,5 @@ module Api
             head :unauthorized unless @current_user
           end
         end
-    end
+  end
 end

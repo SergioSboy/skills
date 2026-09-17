@@ -23,5 +23,4 @@ group :development, :test do
   gem "rspec-rails"
   gem "dotenv-rails"
   gem "json", "< 3"
-
 end

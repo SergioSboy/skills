@@ -13,7 +13,7 @@ module Auth
         token,
         nil,
         true,
-        algorithms: ["RS256"],
+        algorithms: [ "RS256" ],
         jwks: jwks,
         iss: Auth::Keycloak::ISSUER,
         verify_iss: true,
