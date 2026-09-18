@@ -14,17 +14,26 @@ module Api
         )
       end
 
-      def logout
-        id_token = session[:oidc_id_token]
-        reset_session
+        def logout
+          user_id = session.dig(:user, :id)
 
-        redirect_to(
-          Auth::Oidc::Logout.url(id_token_hint: id_token),
-          allow_other_host: true
-        )
-      end
+          Rails.logger.info(
+            "OIDC logout started user_id=#{user_id}"
+          )
+
+          id_token = session[:oidc_id_token]
+
+          reset_session
+
+          redirect_to(
+            Auth::Oidc::Logout.url(id_token_hint: id_token),
+            allow_other_host: true
+          )
+        end
 
         def logout_callback
+            Rails.logger.info("OIDC logout successful")
+
           render json: {
             data: {
               message: "logout successful"
@@ -56,10 +65,16 @@ module Api
           code_verifier: code_verifier
         )
 
-        session[:oidc_id_token] = id_token
-
         id_token = tokens.fetch("id_token")
+
+        session[:oidc_id_token] = id_token
         user = Auth::Oidc::IdTokenVerifier.call(id_token: id_token, expected_nonce: nonce)
+
+        Rails.logger.info(
+          "OIDC login successful " \
+          "user_id=#{user["sub"]} " \
+          "username=#{user["preferred_username"]}"
+        )
 
         session[:user] = {
           id: user.fetch("sub"), username: user["preferred_username"], email: user["email"]

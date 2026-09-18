@@ -36,7 +36,14 @@ module Auth
           raise KeyError, "token exchange failed"
         end
 
-        JSON.parse(response.body)
+        tokens = JSON.parse(response.body)
+
+        Rails.logger.info(
+          "OIDC token exchange successful " \
+          "client=#{Auth::Keycloak::CLIENT_ID}"
+        )
+
+        tokens
       end
     end
   end
