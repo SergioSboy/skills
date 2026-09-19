@@ -695,3 +695,4 @@ curl http://localhost:3000/api/v1/me \
 ## Список литературы
 
 https://habr.com/ru/companies/slurm/articles/654475/ - Keycloak
+https://www.youtube.com/watch?v=uq2I9z_ZB6Q - основы Keyklock, Oauth 2.0
