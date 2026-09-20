@@ -1,0 +1,182 @@
+global
+    log /dev/log local0
+    log /dev/log local1 notice
+
+    daemon
+    maxconn 2048
+
+    ssl-default-bind-min-ver TLSv1.2
+    ssl-default-bind-max-ver TLSv1.3
+
+    ssl-default-bind-ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384
+
+    ssl-default-bind-ciphersuites TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256
+
+    stats socket /run/haproxy/admin.sock mode 660 level admin
+
+defaults
+    mode http
+    log global
+
+    log-format '{"timestamp":"%t","client_ip":"%ci","frontend":"%f","backend":"%b","server":"%s","method":"%HM","path":"%HP","status":%ST,"bytes":%B,"request_time_ms":%TR,"connect_time_ms":%Tc,"response_time_ms":%Tr}'
+
+
+    option httplog
+    option dontlognull
+    option forwardfor
+
+    timeout connect 5s
+    timeout client 30s
+    timeout server 30s
+
+     timeout queue 10s
+     timeout http-keep-alive 10s
+
+    default-server inter 5s fall 3 rise 2
+
+
+
+# HTTP frontend
+
+
+frontend http_front
+    bind *:80
+
+    # Redirect HTTP -> HTTPS
+    http-request redirect scheme https code 301
+
+
+
+# HTTPS frontend
+
+
+frontend https_front
+    bind *:443 ssl crt /etc/haproxy/certs/example.pem
+
+    maxconn 1000
+
+    # Rate limiting
+    stick-table type ip size 100k expire 10s store http_req_rate(10s)
+
+    http-request track-sc0 src
+
+    http-request deny deny_status 429 \
+        if { sc_http_req_rate(0) gt 100 }
+
+    # ACL by domain
+
+    acl host_app hdr(host) -i app.example.com
+    acl host_api hdr(host) -i api.example.com
+
+    # ACL by path
+
+    acl path_api path_beg /api
+    acl path_admin path_beg /admin
+    acl path_health path /health
+
+    # ACL by HTTP method
+
+    acl method_get method GET
+    acl method_post method POST
+
+    # ACL by HTTP header
+
+    acl has_api_key req.hdr(X-API-Key) -m found
+
+
+    # Routing
+
+    # API requests from api.example.com
+    use_backend api_backend if host_api path_api
+
+    # Requests to /admin
+    use_backend admin_backend if path_admin
+
+    # Requests to app.example.com
+    use_backend app_backend if host_app
+
+    # API request with X-API-Key
+    use_backend api_backend if has_api_key path_api
+
+    http-request deny deny_status 413 if { req.body_size gt 10485760 }
+
+
+    # Unknown route
+    default_backend not_found_backend
+
+
+
+# Application backend
+
+backend app_backend
+    balance roundrobin
+
+    maxconn 300
+
+    option redispatch
+    retries 2
+
+    option httpchk GET /health
+    http-check expect status 200
+    http-check expect string OK
+
+    server app1 10.0.0.11:8080 check
+    server app2 10.0.0.12:8080 check
+
+
+
+# API backend
+
+backend api_backend
+    balance leastconn
+
+    option httpchk GET /health
+    http-check expect status 200
+    http-check expect string OK
+
+    server api1 10.0.0.21:8080 check
+    server api2 10.0.0.22:8080 check
+
+
+
+# Admin backend
+
+backend admin_backend
+    balance roundrobin
+
+    option httpchk GET /health
+    http-check expect status 200
+
+    server admin1 10.0.0.31:8080 check
+
+# Page stats
+
+listen stats
+    bind *:8404
+    mode http
+
+    stats enable
+    stats uri /stats
+    stats refresh 10s
+
+    stats auth admin:CHANGE_ME
+
+    acl allowed_network src 10.0.0.0/8
+    http-request deny unless allowed_network
+
+# Prometheus
+
+frontend prometheus
+    bind *:8405
+    mode http
+
+    http-request use-service prometheus-exporter
+
+    acl prometheus_network src 10.0.0.0/8
+    http-request deny unless prometheus_network
+
+# Unknown route
+
+backend not_found_backend
+    http-request return status 404 content-type "text/plain" lf-string "404 Not Found: route is not configured"
+

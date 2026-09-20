@@ -1,0 +1,59 @@
+---
+- name: Install HAProxy and OpenSSL
+  ansible.builtin.apt:
+    name:
+      - haproxy
+      - openssl
+    state: present
+    update_cache: true
+
+- name: Create HAProxy certificate directory
+  ansible.builtin.file:
+    path: /etc/haproxy/certs
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Generate self-signed certificate for HAProxy
+  ansible.builtin.command:
+    cmd: >
+      openssl req -x509 -nodes -newkey rsa:2048
+      -keyout /etc/haproxy/certs/example.key
+      -out /etc/haproxy/certs/example.crt
+      -days 365
+      -subj "/CN=example.com"
+  args:
+    creates: /etc/haproxy/certs/example.crt
+
+- name: Create HAProxy PEM file
+  ansible.builtin.shell:
+    cmd: >
+      cat /etc/haproxy/certs/example.key
+      /etc/haproxy/certs/example.crt
+      > /etc/haproxy/certs/example.pem
+  args:
+    creates: /etc/haproxy/certs/example.pem
+
+- name: Set certificate permissions
+  ansible.builtin.file:
+    path: /etc/haproxy/certs/example.pem
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: Deploy HAProxy configuration
+  ansible.builtin.template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    owner: root
+    group: root
+    mode: "0644"
+    validate: "haproxy -c -f %s"
+  notify: Restart HAProxy
+
+- name: Ensure HAProxy is enabled and started
+  ansible.builtin.service:
+    name: haproxy
+    state: started
+    enabled: true
