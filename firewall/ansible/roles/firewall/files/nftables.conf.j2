@@ -1,0 +1,110 @@
+#!/usr/sbin/nft -f
+
+flush ruleset
+
+table inet filter {
+    # 1. Множество доверенных IP для административного доступа
+    set admin_hosts {
+        type ipv4_addr
+        flags interval
+        elements = { {{ admin_trusted_ips | join(', ') }} }
+    }
+
+    # 2. Динамический бан-лист (Blackhole set с таймаутом)
+    set blackhole {
+        type ipv4_addr
+        size 65535
+        flags timeout
+    }
+
+    chain input {
+        type filter hook input priority filter; policy drop;
+
+        # Автоматический отброс пакетов из бан-листа
+        ip saddr @blackhole drop
+
+        # Loopback
+        iif "lo" accept
+
+        # Установленные и связанные соединения
+        ct state established,related accept
+        ct state invalid drop
+
+        # ICMP Rate Limiting (защита от ping-флуда)
+        ip protocol icmp icmp type echo-request limit rate {{ icmp_rate_limit }} burst {{ icmp_burst }} accept
+        ip protocol icmp icmp type destination-unreachable accept
+        ip6 nsproto icmpv6 accept
+
+        # Защита SSH: Доступ ТОЛЬКО для адресов изВот обновленный playbook и Jinja2-шаблон для `nftables`, в который добавлена поддержка **sets (наборов адресов/портов)** и **rate limiting (ограничения частоты запросов)**.
+
+---
+
+### 1. Jinja2-шаблон: `templates/nftables.conf.j2`
+
+```jinja2
+#!/usr/sbin/nft -f
+
+flush ruleset
+
+table {{ nft_address_family | default('inet') }} {{ nft_table_name | default('filter') }} {
+
+    {% if nft_sets is defined and nft_sets | length > 0 %}
+    # =========================================================================
+    # Sets (Списки доступа)
+    # =========================================================================
+    {% for set in nft_sets %}
+    set {{ set.name }} {
+        type {{ set.type }}
+        {% if set.flags is defined %}
+        flags {{ set.flags | join(', ') }}
+        {% endif %}
+        {% if set.timeout is defined %}
+        timeout {{ set.timeout }}
+        {% endif %}
+        {% if set.elements is defined and set.elements | length > 0 %}
+        elements = { {{ set.elements | join(', ') }} }
+        {% endif %}
+    }
+    {% endfor %}
+
+    {% endif %}
+    # =========================================================================
+    # Chains & Rules
+    # =========================================================================
+    chain input {
+        type filter hook input priority {{ nft_input_priority | default(0) }}; policy {{ nft_input_policy | default('drop') }};
+
+        # Loopback interface
+        iifname "lo" accept
+
+        # Connection tracking (Conntrack)
+        ct state established,related accept
+        ct state invalid drop
+
+        {% if nft_rate_limits is defined and nft_rate_limits | length > 0 %}
+        # Rate Limiting Rules
+        {% for limit in nft_rate_limits %}
+        {% if limit.protocol is defined and limit.port is defined %}
+        {{ limit.protocol }} dport {{ limit.port }} {% if limit.saddr is defined %}ip saddr {{ limit.saddr }} {% endif %}limit rate {{ limit.rate }} {{ limit.action | default('accept') }}
+        {% elif limit.rule is defined %}
+        {{ limit.rule }} limit rate {{ limit.rate }} {{ limit.action | default('accept') }}
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+
+        {% if nft_custom_input_rules is defined and nft_custom_input_rules | length > 0 %}
+        # Custom Input Rules
+        {% for rule in nft_custom_input_rules %}
+        {{ rule }}
+        {% endfor %}
+        {% endif %}
+    }
+
+    chain forward {
+        type filter hook forward priority 0; policy {{ nft_forward_policy | default('drop') }};
+    }
+
+    chain output {
+        type filter hook output priority 0; policy {{ nft_forward_policy | default('accept') }};
+    }
+}

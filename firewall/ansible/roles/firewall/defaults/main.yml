@@ -1,0 +1,55 @@
+---
+# Сетевые интерфейсы
+router_lan_interface: "eth0"
+router_wan_interface: "eth1"
+router_dmz_interface: "eth2"
+
+# Подсети
+router_lan_network: "10.0.1.0/24"
+
+# Внешний IP роутера (для Hairpin NAT)
+router_wan_ip: "1.2.3.4"
+
+# Серверы в DMZ
+dmz_web_server_ip: "192.168.2.10"
+dmz_web_ports:
+  - 80
+  - 443
+
+# Сетевые интерфейсы
+wan_interface: "eth0"
+lan_interface: "eth1"
+lan_subnet: "192.168.1.0/24"
+
+# 1. Доверенные адреса для SSH / администрирования (Sets)
+admin_trusted_ips:
+  - "192.168.1.50"
+  - "10.8.0.0/24"
+  - "203.0.113.15"
+
+# 2. Настройки Rate Limiting
+icmp_rate_limit: "5/second"
+icmp_burst: "10 packets"
+
+# Лимит новых TCP-соединений в секунду на публичные порты (HTTP/HTTPS)
+web_conn_rate_limit: "50/second"
+web_conn_burst: "100 packets"
+
+# Защита SSH от брутфорса (новых попыток в минуту с одного IP)
+ssh_rate_limit: "3/minute"
+ssh_burst: "5 packets"
+
+# Правила DNAT (Проброс портов)
+dnat_rules:
+  - port: 80
+    dest_ip: "192.168.1.10"
+    dest_port: 80
+    comment: "Web Server"
+  - port: 443
+    dest_ip: "192.168.1.10"
+    dest_port: 443
+    comment: "HTTPS Web Server"
+  - port: 2222
+    dest_ip: "192.168.1.20"
+    dest_port: 22
+    comment: "SSH to Internal Server"
