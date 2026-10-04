@@ -449,6 +449,475 @@ RSTP
 
 # Access и trunk порты
 
+## Настройка Access и Trunk портов
+
+Основные типы портов
+
+Access порт передает нетегированный трафик одного конкретного VLAN. Подключает конечные устройства (ПК, сервера). Метка 802.1Q снимается при выходе из порта.
+
+Trunk порт передает тегированный трафик нескольких VLAN по одному кабелю. Подключает коммутаторы между собой или к роутеру.
+
+## Конфигурация
+
+Access
+Switch(config-if)# switchport mode access
+Switch(config-if)# switchport access vlan 10
+
+Trunk
+Switch(config-if)# switchport mode trunk
+Switch(config-if)# switchport trunk allowed vlan 10,20
+
+## Проверка и изоляция
+
+Разные VLAN не имеют L2-связности без роутера. Ping между ними не проходит, ARP-запросы изолированы.
+
+## Диагностика ошибок
+
+1. Ошибка VLAN на Access: Устройство в чужом сегменте.
+   Команда: show vlan brief
+2. Заблокирован VLAN на Trunk: Трафик не проходит между коммутаторами.
+   Команда: show interfaces trunk
+3. VLAN не создан: Порт не работает, пока VLAN не объявлен в базе (vlan 10).
+   Команда: show vlan brief
+
+# VLAN в Linux
+
+## Создание VLAN интерфейса через ip link
+
+Синтаксис: ip link add link [ФИЗ_ИНТЕРФЕЙС] name [ИМЯ_VLAN_ИНТЕРФЕЙСА] type vlan id [VLAN_ID]
+
+Пример:
+
+```
+ip link add link eth0 name eth0.10 type vlan id 10
+ip link set dev eth0.10 up
+```
+
+## Назначение IP адресов и проверка трафика
+
+Назначение IP адреса:
+
+```
+ip addr add 192.168.10.2/24 dev eth0.10
+```
+
+Проверка таблицы маршрутизации и связности:
+```
+ip route show
+ping -c 4 192.168.10.1
+```
+
+## Сохранение конфигурации в ОС
+
+```
+Netplan (Ubuntu / Debian):
+Файл: /etc/netplan/01-netcfg.yaml
+network:
+version: 2
+ethernets:
+eth0: {}
+vlans:
+eth0.10:
+id: 10
+link: eth0
+addresses:
+- 192.168.10.2/24
+```
+
+Применить: netplan apply
+
+NetworkManager (RHEL / CentOS / Fedora):
+
+```
+nmcli con add type vlan con-name eth0.10 dev eth0 id 10 ip4 192.168.10.2/24
+```
+
+## Анализ 802.1Q тегов с помощью tcpdump
+
+Захват тегированного трафика на физическом интерфейсе:
+
+```
+tcpdump -i eth0 -e vlan 10
+```
+
+Ключ -e включает показ заголовков L2 (Ethernet). В выводе отобразится поле vlan 10, p 0 (VLAN ID и приоритет PCP).
+
+Диагностика
+
+Посмотреть список всех VLAN интерфейсов:
+
+```
+ip -d link show type vlan
+```
+
+Проверить статистику кадров:
+
+```
+ip -s link show dev eth0.10
+```
+
+
+# Linux Bridge и VLAN Filtering
+
+## Создание Bridge и добавление интерфейсов
+
+Создание моста и перевод в состояние UP:
+
+```
+ip link add name br0 type bridge
+ip link set dev br0 up
+```
+
+Подключение физических или виртуальных интерфейсов к мосту:
+
+```
+ip link set dev eth0 master br0
+ip link set dev eth1 master br0
+ip link set dev eth0 up
+ip link set dev eth1 up
+```
+
+## Включение VLAN filtering
+
+По умолчанию Linux bridge работает как обычный L2-коммутатор без учета 802.1Q тегов. Для поддержки VLAN на уровне моста включается режим VLAN filtering:
+
+ip link set dev br0 type bridge vlan_filtering 1
+
+## Настройка PVID и Tagged/Untagged membership
+
+Управление VLAN на портах моста выполняется через утилиту bridge vlan.
+
+Конфигурация Access порта (Untagged + PVID):
+Назначает нетегированному входящему трафику VLAN ID, а при выходе снимает тег.
+
+```
+bridge vlan add dev eth0 vid 10 pvid untagged
+bridge vlan del dev eth0 vid 1
+```
+
+Конфигурация Trunk порта (Tagged):
+Пропускает тегированный трафик указанных VLAN.
+
+```
+bridge vlan add dev eth1 vid 10
+bridge vlan add dev eth1 vid 20
+bridge vlan del dev eth1 vid 1
+```
+
+Проверка таблицы пересылки и VLAN
+
+Просмотр конфигурации VLAN на портах моста:
+
+```
+bridge vlan show
+```
+
+Просмотр таблицы MAC-адресов (FDB - Forwarding Database):
+
+```
+bridge fdb show dev br0
+```
+
+## Диагностика и проверка изоляции
+
+1. Устройства в одном VLAN на разных портах моста имеют L2-связность.
+2. Устройства в разных VLAN не видят ARP-запросы друг друга и не пингуются без L3-маршрутизации.
+3. Команда bridge fdb show отображает, к какому VLAN ID привязан конкретный MAC-адрес на интерфейсе.
+
+# Межвлановая маршрутизация (Inter-VLAN Routing)
+
+Router-on-a-stick
+
+Топология, где маршрутизатор подключается к коммутатору одним физическим кабелем через Trunk-порт.
+На физическом интерфейсе создаются логические подуинтерфейсы (sub-interfaces) для каждого VLAN
+
+## Настройка Router-on-a-stick (Cisco CLI)
+
+1. Включение физического интерфейса:
+   Router(config)# interface gigabitethernet 0/0/0
+   Router(config-if)# no shutdown
+2. Создание подуинтерфейса для VLAN 10:
+   Router(config)# interface gigabitethernet 0/0/0.10
+   Router(config-subif)# encapsulation dot1Q 10
+   Router(config-subif)# ip address 192.168.10.1 255.255.255.0
+3. Создание подуинтерфейса для VLAN 20:
+   Router(config)# interface gigabitethernet 0/0/0.20
+   Router(config-subif)# encapsulation dot1Q 20
+   Router(config-subif)# ip address 192.168.20.1 255.255.255.0
+
+## Межвлановая маршрутизация в Linux
+
+В Linux роль Router-on-a-stick выполняет хост с набором VLAN-интерфейсов и включенной пересылкой IP-пакетов
+
+1. Создание интерфейсов и назначение IP (шлюзов):
+   ip link add link eth0 name eth0.10 type vlan id 10
+   ip link add link eth0 name eth0.20 type vlan id 20
+
+ip addr add 192.168.10.1/24 dev eth0.10
+ip addr add 192.168.20.1/24 dev eth0.20
+
+ip link set dev eth0.10 up
+ip link set dev eth0.20 up
+
+2. Включение IP forwarding (маршрутизации):
+   sysctl -w net.ipv4.ip_forward=1
+
+Персистентно в /etc/sysctl.conf:
+net.ipv4.ip_forward = 1
+
+## Фильтрация и ограничение доступа (Firewall)
+
+По умолчанию включенный IP forwarding разрешает полный трафик между всеми VLAN. Для изоляции применяются правила nftables или iptables.
+
+Ограничение доступа через nftables (блокировка трафика из VLAN 10 в VLAN 20):
+
+nft add table inet filter
+nft add chain inet filter forward { type filter hook forward priority 0 ; policy accept ; }
+nft add rule inet filter forward iifname "eth0.10" oifname "eth0.20" drop
+
+Аналог в iptables:
+iptables -A FORWARD -i eth0.10 -o eth0.20 -j DROP
+
+## Проверка работы
+
+1. Команда show ip route (Cisco) или ip route (Linux) должна содержать маршруты ко всем подключенным VLAN-подсетям как Directly Connected.
+2. Конечные устройства в VLAN 10 должны использовать IP-адрес своего подуинтерфейса (192.168.10.1) в качестве основного шлюза (Default Gateway).
+3. Ping с устройства 192.168.10.10 на 192.168.20.10 должен проходить при отключенном файрволе и блокироваться при включенном правиле.
+
+
+# DHCP и инфраструктурные сервисы в VLAN
+
+## DHCP Scope (Пул адресов) для каждого VLAN
+
+Для каждой изолированной L2-подсети (VLAN) требуется свой уникальный диапазон IP-адресов, шлюз по умолчанию и DNS-серверы.
+
+Конфигурация Cisco IOS (DHCP сервер на L3-устройстве):
+
+```
+ip dhcp pool VLAN10
+network 192.168.10.0 255.255.255.0
+default-router 192.168.10.1
+dns-server 192.168.10.5
+default-lease 1 0 0
+
+ip dhcp pool VLAN20
+network 192.168.20.0 255.255.255.0
+default-router 192.168.20.1
+dns-server 192.168.10.5
+```
+
+Исключение статических адресов (шлюзы, серверы):
+```
+ip dhcp excluded-address 192.168.10.1 192.168.10.10
+```
+
+## DHCP Relay (ip helper-address)
+
+Широковещательные запросы DHCP Discover (255.255.255.255 / L2 broadcast) не проходят через границы L3-маршрутизатора. Если DHCP-сервер находится в отдельном Management VLAN или централизованном ЦОД, на L3-интерфейсе шлюза настраивается DHCP Relay.
+
+Принцип работы:
+
+1. Клиент посылает DHCP Discover (broadcast) в свой VLAN.
+2. L3-интерфейс шлюза перехватывает пакет, превращает его в Unicast и пересылает на IP-адрес DHCP-сервера.
+3. В поле giaddr (Gateway IP Address) шлюз подставляет свой IP-адрес из данного VLAN, чтобы DHCP-сервер понял, из какого пула выделить адрес.
+
+Настройка Cisco (на L3-интерфейсе / SVI / sub-interface):
+interface GigabitEthernet0/0/0.10
+ip address 192.168.10.1 255.255.255.0
+ip helper-address 10.0.0.100
+
+Настройка в Linux (dnsmasq / isc-dhcp-relay):
+dhcrelay -i eth0.10 -i eth0.20 10.0.0.100
+
+## Размещение сервисов (DNS, NTP, Management)
+
+1. Выделенный Management / Infrastructure VLAN:
+   Инфраструктурные серверы (DNS, NTP, Active Directory, syslog, контроллеры) размещаются в отдельном защищенном VLAN (например, VLAN 99 или 100).
+2. Маршрутизация и доступ:
+   Клиенты из рабочих VLAN (VLAN 10, 20) получают доступ к DNS (UDP/TCP 53) и NTP (UDP 123) в Management VLAN через L3-маршрутизатор с правилами Firewall (разрешен только необходимый целевой порт, управление серверами с клиентских VLAN заблокировано).
+
+## Проверка и диагностика
+
+Проверка полученных параметров на клиенте:
+Linux: ip addr show, ip route show, cat /etc/resolv.conf
+
+Принудительное обновление DHCP-аренды:
+Linux: dhclient -r && dhclient eth0 (или nmcli device reapply eth0)
+
+Анализ DHCP-трафика через tcpdump на маршрутизаторе:
+tcpdump -i eth0.10 -n port 67 or port 68 -v
+
+
+# Отказоустойчивость и петли на L2
+
+Назначение STP/RSTP
+
+Протоколы Spanning Tree Protocol (STP, 802.1D) и Rapid STP (RSTP, 802.1w) предотвращают широковещательные штормы (Broadcast Storms), дублирование кадров и нестабильность таблицы MAC-адресов, возникающие при наличии резервных физических связей между коммутаторами.
+
+Принцип работы:
+
+1. Выбор Root Bridge (Корневого коммутатора) с наименьшим Bridge ID (Priority + MAC).
+2. Определение стоимости путей (Path Cost) до Root Bridge.
+3. Перевод резервных портов в состояние Blocking (STP) или Discarding (RSTP) для исключения замкнутых петлевых маршрутов.
+
+## Блокировка и восстановление связей
+
+Состояния портов в RSTP:
+
+1. Discarding: Порт блокирует пользовательский трафик, не изучает MAC-адреса, но принимает служебные кадры BPDU.
+2. Learning: Изучает MAC-адреса, но не пересылает кадры данных.
+3. Forwarding: Полноценно принимает и пересылает данные.
+
+## Время сходимости (Convergence):
+
+* Классический STP (802.1D): 30–50 секунд при отказе основного канала.
+* RSTP (802.1w): 1–3 секунды благодаря механизму запросов и подтверждений (Proposal/Agreement).
+
+Проверка статуса STP (Cisco CLI):
+show spanning-tree vlan 10
+
+## Взаимодействие VLAN с Bonding / LACP (802.3ad)
+
+LACP (Link Aggregation Control Protocol) объединяет несколько физических каналов в один логический (Port Channel / Bond-интерфейс) для увеличения пропускной способности и отказоустойчивости без образования L2-петель.
+
+Порядок наслоения технологий (Иерархия):
+
+1. Физические интерфейсы (eth0, eth1) объединяются в логический агрегат (bond0).
+2. На логическом агрегате (bond0) поднимается LACP и настраиваются 802.1Q VLAN-интерфейсы (bond0.10, bond0.20) или Trunk-режим.
+3. STP воспринимает весь агрегированный канал (bond0) как один физический порт, избегая блокировки входящих в него линий.
+
+Настройка LACP в Linux (через netplan / ip link):
+ip link add bond0 type bond mode 802.3ad
+ip link set eth0 master bond0
+ip link set eth1 master bond0
+ip link add link bond0 name bond0.10 type vlan id 10
+
+## Предотвращение неуправляемых L2-петель
+
+Защитные механизмы на коммутаторах:
+
+1. BPDU Guard: Отключает порт (err-disable), если на Access-порт, предназначенный для клиентов, приходит BPDU-кадр (защита от случайного подключения пользователем неуправляемого свитча).
+2. Loop Guard: Переводит порт в состояние loop-inconsistent при прекращении получения BPDU на блокируемом порту (защита от однонаправленных сбоев).
+3. PortFast / Edge Port: Переводит абонентские порты сразу в состояние Forwarding в обход стадий STP, ускоряя инициализацию клиентов.
+
+
+# Безопасность L2 и VLAN
+
+## Разделение трафика по VLAN
+
+Создаются строго изолированные L2-сегменты для предотвращения несанкционированного доступа и ограничения широковещательных штормов:
+
+1. User VLAN: Пользовательские устройства, рабочие станции.
+2. Server VLAN: Корпоративные сервисы, приложения, базы данных.
+3. Management VLAN: Интерфейсы управления коммутаторами, маршутизаторами, гипервизорами и PDU (доступ только из защищенных админских подсетей).
+
+Ограничение списка VLAN на Trunk
+
+По умолчанию Trunk-порт пропускает трафик всех VLAN (1–4094). Для снижения векторов атак разрешаются только необходимый трафик.
+
+Настройка Cisco CLI:
+Switch(config-if)# switchport trunk allowed vlan 10,20,99
+
+## VLAN Hopping и меры защиты
+
+VLAN Hopping — атака, позволяющая хосту из одного VLAN отправить кадры напрямую в другой VLAN в обход L3-маршрутизатора и файрвола.
+
+Существует два основных сценария атаки:
+
+1. Switch Spoofing (Подмена коммутатора)
+   Атакующий отправляет DTP-пакеты (Dynamic Trunking Protocol), заставляя порт коммутатора автоматически переключиться из режима Access в режим Trunk.
+   Защита: Явное отключение согласования режимов на всех абонентских портах.
+
+Switch(config-if)# switchport mode access
+Switch(config-if)# switchport nonegotiate
+
+2. Double Tagging (Двойное тегирование)
+   Атакующий отправляет кадр с двумя тегами 802.1Q: внешний тег равен Native VLAN транка, внутренний — целевому VLAN атаки (например, VLAN 20). Первый коммутатор снимает внешний тег (так как это Native VLAN) и отправляет нетегированный кадр в Trunk. Второй коммутатор видит внутренний тег и пересылает кадр в VLAN 20.
+   Защита: Смена дефолтного Native VLAN 1 и исключение его использования на пользовательских портах.
+
+## Безопасность Native VLAN
+
+1. Никогда не использовать VLAN 1 по умолчанию для передачи пользовательского или служебного трафика.
+2. Выделить отдельный изолированный VLAN (Dummy / Blackhole VLAN, например VLAN 999) и сделать его Native VLAN на всех Trunk-портах. На нем не должно быть активных L3-интерфейсов и конечных устройств.
+3. Принудительно включить тегирование Native VLAN на всех транках.
+
+Cisco CLI:
+Switch(config)# vlan 999
+Switch(config-vlan)# name Blackhole_Native
+Switch(config)# interface gigabitethernet 0/24
+Switch(config-if)# switchport trunk native vlan 999
+Switch(config)# vlan dot1q tag native
+
+## Базовый чек-лист Hardening L2-портов
+
+1. Все неиспользуемые порты выключить и перевести в неактивный VLAN:
+   Switch(config-if)# shutdown
+   Switch(config-if)# switchport access vlan 999
+2. Включить Port Security и BPDU Guard на абонентских портах.
+
+# Диагностика и документация L2/L3 сетей
+
+## Документирование VLAN и подсетей
+
+Пример эталонной таблицы учета сетевых сегментов (IPAM):
+
+VLAN ID | Название | Подсеть CIDR | Шлюз (Gateway) | Назначение
+10 | Corporate_Users | 192.168.10.0/24 | 192.168.10.1 | Рабочие станции сотрудников
+20 | Servers | 192.168.20.0/24 | 192.168.20.1 | Локальные серверы и сервисы
+99 | Management | 10.0.99.0/24 | 10.0.99.1 | Управление (коммутаторы, IPMI)
+999 | Blackhole_Native | N/A | N/A | Неиспользуемый Native VLAN для Trunk
+
+## Проверка состояния интерфейсов и таблиц L2/L3
+
+Linux CLI:
+Проверка VLAN на мосту: bridge vlan show
+Таблица MAC-адресов моста (FDB): bridge fdb show dev br0
+Таблица ARP (L3 маппинг): ip neighbor show
+Статистика интерфейсов и ошибок: ip -s link show dev eth0.10
+
+Cisco CLI:
+Проверка базы VLAN: show vlan brief
+Состояние Trunk-портов: show interfaces trunk
+Таблица MAC-адресов: show mac address-table
+Таблица ARP: show ip arp
+
+## Захват и анализ кадров (tcpdump)
+
+1. Захват нетегированного трафика (Untagged):
+   tcpdump -i eth0 -n -e
+2. Захват тегированного трафика 802.1Q (Tagged):
+   tcpdump -i eth0 -n -e vlan 10
+3. Фильтрация конкретных протоколов с L2-заголовками:
+   tcpdump -i eth0 -n -e arp or port 67
+
+Ключ -e выводит MAC-адреса и VLAN ID в заголовке Ethernet.
+
+## Алгоритм последовательной диагностики сбоев (Troubleshooting Workflow)
+
+Шаг 1. Физический и Канальный уровни (L1 / L2)
+
+* Проверить статус портов (Link UP/DOWN).
+* Проверить VLAN membership на Access-портах (show vlan brief / bridge vlan show).
+* Проверить наличие нужного VLAN в списке allowed на Trunk-интерфейсах.
+* Проверить заполнение таблицы MAC-адресов на обоих концах линка.
+
+Шаг 2. DHCP и L2-инфраструктура
+
+* Проверить прохождение DHCP Discover кадра через tcpdump на клиенте и шлюзе.
+* На L3-шлюзе проверить настройку DHCP Relay (ip helper-address / dhcrelay) и доступность DHCP-сервера.
+
+Шаг 3. Сетевой уровень (L3)
+
+* Проверить правильность IP-адреса, маски и Default Gateway на клиенте.
+* Проверить доступность локального шлюза через ping.
+* Проверить таблицу ARP на клиенте и шлюзе (наличие MAC-адреса оппонента).
+
+Шаг 4. Фильтрация трафика (Firewall / ACL)
+
+* Проверить правила межвланового экрана на маршрутизаторе (nftables / iptables / ACL).
+* Проверить статус sysctl net.ipv4.ip_forward (должна быть 1).
+* Проверить системные счетчики заблокированных пакетов (nft list ruleset или iptables -L -v -n).
+
 # Список литературы
 
 https://www.youtube.com/watch?v=zYiKcbmBfgU - Канальный уровень
