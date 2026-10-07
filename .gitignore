@@ -35,3 +35,5 @@ coverage/
 /config/master.key
 /vendor
 /.idea
+
+README.md
