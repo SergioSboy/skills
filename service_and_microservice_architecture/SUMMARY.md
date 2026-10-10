@@ -788,7 +788,7 @@ Trace: оформление заказа
 
 # Список литературы
 
-https://www.youtube.com/watch?v=DG2wojMbGB8&t=51s - Паттерн Outbox
-https://www.youtube.com/watch?v=_KaEC-Mktv4&t=100s - Паттерн SAGA
-https://www.youtube.com/watch?v=kWsObFdMfa4 - ОРКЕСТРАЦИЯ и ХОРЕОГРАФИЯ МИКРОСЕРВИСОВ
-https://www.youtube.com/watch?v=ltyWaCx_ywQ - паттерны circuit breaker, bulkhead, backpressure, dlq, backoff, jitter
+1. https://www.youtube.com/watch?v=DG2wojMbGB8&t=51s - Паттерн Outbox
+2. https://www.youtube.com/watch?v=_KaEC-Mktv4&t=100s - Паттерн SAGA
+3. https://www.youtube.com/watch?v=kWsObFdMfa4 - ОРКЕСТРАЦИЯ и ХОРЕОГРАФИЯ МИКРОСЕРВИСОВ
+4. https://www.youtube.com/watch?v=ltyWaCx_ywQ - паттерны circuit breaker, bulkhead, backpressure, dlq, backoff, jitter
