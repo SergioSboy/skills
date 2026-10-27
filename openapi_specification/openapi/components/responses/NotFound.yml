@@ -1,0 +1,11 @@
+description: Заказ не найден
+content:
+  application/json:
+    schema:
+      $ref: '../schemas/Error.yml'
+    examples:
+      orderNotFound:
+        summary: Заказ с указанным идентификатором не найден
+        value:
+          code: ORDER_NOT_FOUND
+          message: Заказ не найден.

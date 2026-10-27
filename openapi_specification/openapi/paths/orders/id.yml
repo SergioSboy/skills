@@ -1,0 +1,67 @@
+parameters:
+  - $ref: '../../components/parameters/OrderId.yml'
+
+get:
+  summary: Получить заказ
+  operationId: getOrder
+  tags:
+    - Orders
+  description: Возвращает заказ текущего пользователя.
+
+  responses:
+    '200':
+      description: Заказ успешно получен
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/Order.yml'
+          example:
+            id: order-123
+            items:
+              - productId: product-123
+                quantity: 2
+                unitPrice: 150000
+            status: new
+            createdAt: '2026-10-27T10:30:00Z'
+
+    '401':
+      $ref: '../../components/responses/Unauthorized.yml'
+
+    '404':
+      $ref: '../../components/responses/NotFound.yml'
+
+delete:
+  summary: Отменить заказ
+  operationId: cancelOrder
+  tags:
+    - Orders
+  description: >
+    Отменяет заказ текущего пользователя, сохраняя его данные.
+    Для статусов new и processing устанавливает cancelled.
+    Если заказ уже отменён, возвращает его без изменений.
+    Выполненный заказ отменить нельзя.
+
+  responses:
+    '200':
+      description: Заказ отменён или уже был отменён
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/Order.yml'
+          example:
+            id: order-123
+            items:
+              - productId: product-123
+                quantity: 2
+                unitPrice: 150000
+            status: cancelled
+            createdAt: '2026-10-27T10:30:00Z'
+
+    '401':
+      $ref: '../../components/responses/Unauthorized.yml'
+
+    '404':
+      $ref: '../../components/responses/NotFound.yml'
+
+    '409':
+      $ref: '../../components/responses/Conflict.yml'

@@ -1,0 +1,35 @@
+type: object
+description: Список заказов с информацией о пагинации
+
+required:
+  - items
+  - total
+  - limit
+  - offset
+
+properties:
+  items:
+    type: array
+    description: Заказы текущей страницы
+    items:
+      $ref: './Order.yml'
+
+  total:
+    type: integer
+    format: int64
+    description: Общее количество заказов, доступных пользователю
+    minimum: 0
+    example: 42
+
+  limit:
+    type: integer
+    description: Максимальное количество заказов на странице
+    minimum: 1
+    maximum: 100
+    example: 20
+
+  offset:
+    type: integer
+    description: Количество пропущенных заказов
+    minimum: 0
+    example: 0

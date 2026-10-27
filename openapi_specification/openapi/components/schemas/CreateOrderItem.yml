@@ -1,0 +1,20 @@
+type: object
+description: Позиция создаваемого заказа
+additionalProperties: false
+
+required:
+  - productId
+  - quantity
+
+properties:
+  productId:
+    type: string
+    description: Идентификатор товара
+    minLength: 1
+    example: product-123
+
+  quantity:
+    type: integer
+    description: Количество единиц товара
+    minimum: 1
+    example: 2

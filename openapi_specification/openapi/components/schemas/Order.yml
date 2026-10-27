@@ -1,0 +1,30 @@
+type: object
+description: Заказ
+
+required:
+  - id
+  - items
+  - status
+  - createdAt
+
+properties:
+  id:
+    type: string
+    description: Идентификатор заказа
+    example: order-123
+
+  items:
+    type: array
+    description: Позиции заказа
+    minItems: 1
+    items:
+      $ref: './OrderItem.yml'
+
+  status:
+    $ref: './OrderStatus.yml'
+
+  createdAt:
+    type: string
+    format: date-time
+    description: Дата и время создания заказа
+    example: '2026-10-27T10:30:00Z'

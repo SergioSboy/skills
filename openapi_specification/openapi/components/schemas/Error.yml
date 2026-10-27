@@ -1,0 +1,17 @@
+type: object
+description: Ошибка выполнения запроса
+
+required:
+  - code
+  - message
+
+properties:
+  code:
+    type: string
+    description: Машиночитаемый код ошибки
+    example: INVALID_PAGINATION
+
+  message:
+    type: string
+    description: Описание ошибки для человека
+    example: Параметр limit должен быть от 1 до 100.

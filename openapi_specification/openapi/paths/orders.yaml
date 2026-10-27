@@ -1,0 +1,86 @@
+get:
+  summary: Получить список заказов
+  operationId: listOrders
+  tags:
+    - Orders
+
+  parameters:
+    - $ref: '../components/parameters/Limit.yml'
+    - $ref: '../components/parameters/Offset.yml'
+
+  responses:
+    '200':
+      description: Список заказов успешно получен
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/OrderList.yml'
+          example:
+            items: []
+            total: 0
+            limit: 20
+            offset: 0
+
+    '400':
+      $ref: '../components/responses/BadRequest.yml'
+
+    '401':
+      $ref: '../components/responses/Unauthorized.yml'
+
+post:
+  summary: Создать заказ
+  operationId: createOrder
+  tags:
+    - Orders
+  description: >
+    Создаёт заказ в статусе new.
+    Цены товаров определяет сервер на момент создания заказа.
+
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../components/schemas/CreateOrderRequest.yml'
+        example:
+          items:
+            - productId: product-123
+              quantity: 2
+
+  responses:
+    '201':
+      description: Заказ успешно создан
+      headers:
+        Location:
+          description: Относительный адрес созданного заказа
+          schema:
+            type: string
+          example: /orders/order-123
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/Order.yml'
+          example:
+            id: order-123
+            items:
+              - productId: product-123
+                quantity: 2
+                unitPrice: 150000
+            status: new
+            createdAt: '2026-10-27T10:30:00Z'
+
+    '400':
+      description: Некорректное тело запроса
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/Error.yml'
+          examples:
+            emptyItems:
+              summary: Передан пустой список позиций
+              value:
+                code: VALIDATION_ERROR
+                message: Заказ должен содержать хотя бы одну позицию.
+
+    '401':
+      $ref: '../components/responses/Unauthorized.yml'

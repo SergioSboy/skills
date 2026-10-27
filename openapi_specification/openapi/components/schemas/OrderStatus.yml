@@ -1,0 +1,8 @@
+type: string
+description: Текущий статус заказа
+enum:
+  - new
+  - processing
+  - completed
+  - cancelled
+example: new

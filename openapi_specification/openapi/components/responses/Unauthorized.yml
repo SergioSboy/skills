@@ -1,0 +1,25 @@
+description: Токен доступа отсутствует или недействителен
+
+headers:
+  WWW-Authenticate:
+    description: Схема аутентификации, необходимая для доступа
+    schema:
+      type: string
+    example: Bearer
+
+content:
+  application/json:
+    schema:
+      $ref: '../schemas/Error.yml'
+    examples:
+      missingToken:
+        summary: Токен не передан
+        value:
+          code: UNAUTHORIZED
+          message: Необходим токен доступа.
+
+      invalidToken:
+        summary: Токен недействителен
+        value:
+          code: UNAUTHORIZED
+          message: Токен доступа недействителен или истёк.

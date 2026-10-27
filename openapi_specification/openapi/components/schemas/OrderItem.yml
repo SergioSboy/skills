@@ -1,0 +1,26 @@
+type: object
+description: Позиция заказа
+
+required:
+  - productId
+  - quantity
+  - unitPrice
+
+properties:
+  productId:
+    type: string
+    description: Идентификатор товара
+    example: product-123
+
+  quantity:
+    type: integer
+    description: Количество единиц товара
+    minimum: 1
+    example: 2
+
+  unitPrice:
+    type: integer
+    format: int64
+    description: Цена за единицу товара в копейках
+    minimum: 0
+    example: 150000

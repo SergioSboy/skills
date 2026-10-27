@@ -1,0 +1,9 @@
+name: offset
+in: query
+description: Количество заказов, которые нужно пропустить
+required: false
+schema:
+  type: integer
+  minimum: 0
+  default: 0
+example: 0

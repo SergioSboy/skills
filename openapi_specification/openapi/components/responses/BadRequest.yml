@@ -1,0 +1,11 @@
+description: Некорректные параметры или тело запроса
+content:
+  application/json:
+    schema:
+      $ref: '../schemas/Error.yml'
+    examples:
+      invalidPagination:
+        summary: Недопустимое значение limit
+        value:
+          code: INVALID_PAGINATION
+          message: Параметр limit должен быть от 1 до 100.

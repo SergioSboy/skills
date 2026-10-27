@@ -1,0 +1,8 @@
+name: orderId
+in: path
+description: Идентификатор заказа
+required: true
+schema:
+  type: string
+  minLength: 1
+example: order-123

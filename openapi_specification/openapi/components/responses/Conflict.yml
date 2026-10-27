@@ -1,0 +1,11 @@
+description: Текущий статус заказа не позволяет выполнить операцию
+content:
+  application/json:
+    schema:
+      $ref: '../schemas/Error.yml'
+    examples:
+      orderCannotBeCancelled:
+        summary: Попытка отменить выполненный заказ
+        value:
+          code: ORDER_CANNOT_BE_CANCELLED
+          message: Выполненный заказ нельзя отменить.
