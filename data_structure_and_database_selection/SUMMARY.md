@@ -832,3 +832,4 @@ db/migrate/
 
 https://www.youtube.com/watch?v=vFmajCQ7Wuc - ACID 
 https://www.youtube.com/watch?v=GAe5oB742dw - ACID (eng)
+https://www.youtube.com/watch?v=0kq99Y8m0gw - Нормальные формы
